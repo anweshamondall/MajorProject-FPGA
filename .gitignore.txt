@@ -1,0 +1,12 @@
+# Vivado Project Files to Ignore
+*.log
+*.jou
+*.backup
+.Xil/
+.ipcache/
+.cache/
+.hw_handoff/
+*.runs/
+*.srcs/
+*.ip_user_files/
+xsim/
