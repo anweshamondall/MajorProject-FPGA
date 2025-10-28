@@ -12,7 +12,7 @@ reg [3 : 0] s_box_out;
 
 //Wire used to store the value of M6
 wire [5 : 0] M6;
-
+//Process
 //Computation of M6 vector, used to access the SBox
 assign M6 = {M[5], M[7]^M[2], M[3], M[0], M[4]^M[1], M[6]};
 
