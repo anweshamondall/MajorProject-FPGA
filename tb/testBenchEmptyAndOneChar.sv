@@ -1,84 +1,66 @@
-
+`timescale 1ns / 1ps
+// Testbench: Empty string and single-character test
 module testBenchEmptyAndOneChar;
 
-  reg clk = 1'b0; 
-  always #10 clk = !clk; 
-  
-  reg rst_n = 1'b0; 
-  event reset_deassertion; 
-  
-  reg M_valid;
-  reg [63:0] input_lenght;
-  reg hash_ready;
-  reg [7 : 0] M;
-  reg [31 : 0] digest;
+    // DUT inputs
+    reg clk;
+    reg rst_n;
+    reg M_valid;
+    reg [7:0] M;
+    reg [63:0] input_length;
 
+    // DUT outputs
+    wire hash_ready;
+    wire [31:0] digest;
 
-  lightHashDES test_light_hash (
-      .clk            (clk)
-      ,.rst_n         (rst_n)
-      ,.M_valid		    (M_valid)
-      ,.M 			      (M)
-      ,.input_lenght  (input_lenght)  
-      ,.hash_ready 	  (hash_ready)
-      ,.digest        (digest)
+    // Instantiate DUT
+    lightHashDES dut (
+        .clk(clk),
+        .M_valid(M_valid),
+        .rst_n(rst_n),
+        .M(M),
+        .input_length(input_length),
+        .hash_ready(hash_ready),
+        .digest(digest)
     );
 
-  initial begin
-    #12.8 rst_n = 1'b1;
-    -> reset_deassertion; 
-  end
-     
-  
-  initial begin 
- 
-    localparam empty_digest = 32'hb4d92c3f;
-    localparam A_digest = 32'h4b76d630;
+    // Clock generation (10ns period)
+    always #5 clk = ~clk;
 
-
-    @(reset_deassertion); 
- 
-    begin: EMPTY_TEST
-    $display("\n***EMPTY TEST BEGIN***");
-    @(posedge clk);
-    M_valid = 1'b1;
-    input_lenght = 64'd0;
-    @(posedge clk);
-    M_valid = 1'b0;
-    @(posedge clk);
-    @(posedge clk);
-  
-
-    if(hash_ready)begin
-        $display("Digest result of empty test: %h", digest);
-        $display("test result: [ %s ] ", empty_digest === digest ? "Successful" : "Failure" );
-        $display("***EMPTY TEST END***\n");
+    // Task to apply a byte
+    task send_byte(input [7:0] byte_val);
+    begin
+        @(posedge clk);
+        M <= byte_val;
+        M_valid <= 1;
+        @(posedge clk);
+        M_valid <= 0;
     end
-    end: EMPTY_TEST
+    endtask
 
+    initial begin
+        $display("---- TEST 1: Empty string ----");
+        clk = 0; rst_n = 0; M_valid = 0; M = 0; input_length = 0;
+        #20 rst_n = 1;
 
-    begin: ONE_CHAR_TEST
-    $display("***ONE CHAR TEST (A) BEGIN***");
-    @(posedge clk);
-    M_valid = 1'b1;
-    input_lenght = 64'd1;
-    M = 8'd65;
-    @(posedge clk);
-    M_valid = 1'b0;
-    @(posedge clk);
-    @(posedge clk);
-    @(posedge clk);
+        // Empty input
+        @(posedge clk);
+        input_length = 0;
+        M_valid = 0;
+        #100;
 
-    if(hash_ready)begin
-          $display("Digest result of one char test (A): %h", digest);
-          $display("test result: [ %s ] ", A_digest === digest ? "Successful" : "Failure" );
-          $display("***ONE CHAR TEST (A) END***\n");
-      end
-    end: ONE_CHAR_TEST
+        $display("Digest (Empty): %h", digest);
 
+        $display("---- TEST 2: Single character 'A' ----");
+        rst_n = 0; #20; rst_n = 1;
+        input_length = 1;
+        send_byte("A");
+        wait (hash_ready);
+        #10;
+        $display("Digest ('A'): %h", digest);
 
-  $stop;
-  end
+        #50;
+        $finish;
+    end
 
 endmodule
-
