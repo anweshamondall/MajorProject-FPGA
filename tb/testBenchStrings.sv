@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-// Testbench for lightHashDES - String input test
+// Testbench for lightHashDES - Single input character: '0'
 
 module testBenchStrings;
 
@@ -23,10 +23,10 @@ module testBenchStrings;
         .digest(digest)
     );
 
-    // Clock generation (10ns period)
+    // Generate 10 ns clock
     always #5 clk = ~clk;
 
-    // Task to send 1 byte with proper timing
+    // Task to send one byte
     task send_byte(input [7:0] byte_val);
     begin
         @(posedge clk);
@@ -34,53 +34,34 @@ module testBenchStrings;
         M_valid <= 1;
         @(posedge clk);
         M_valid <= 0;
-        #10; // small delay between bytes
+        #10;
     end
     endtask
 
     initial begin
-        // Enable waveform dump
-        $dumpfile("testBenchStrings.vcd");
+        $dumpfile("wave_zero.vcd");
         $dumpvars(0, testBenchStrings);
 
-        $display("==== START TESTBENCH ====");
+        $display("==== START TESTBENCH (Input = '0') ====");
 
-        // Initial values
         clk = 0; rst_n = 0; M_valid = 0; M = 0; input_length = 0;
 
-        // Reset phase
+        // Reset
         #20;
         rst_n = 1;
         #10;
 
-        // ---- TEST 1: 'ABCD' ----
-        $display("\n---- TEST 1: String 'ABCD' ----");
-        input_length = 4;
-        send_byte("A");
-        send_byte("B");
-        send_byte("C");
-        send_byte("D");
+        // ---- TEST: Input '0' only ----
+        $display("\n---- TEST: Sending '0' ----");
+        input_length = 1; // Only one byte
+
+        send_byte(8'h30); // '0'
 
         wait (hash_ready == 1);
         #10;
-        $display("Digest ('ABCD') = %h", digest);
+        $display("Digest for '0' = %h", digest);
 
-        // ---- TEST 2: 'HELLO' ----
-        $display("\n---- TEST 2: String 'HELLO' ----");
-        rst_n = 0; #20; rst_n = 1;
-        input_length = 5;
-        #10;
-        send_byte("H");
-        send_byte("E");
-        send_byte("L");
-        send_byte("L");
-        send_byte("O");
-
-        wait (hash_ready == 1);
-        #10;
-        $display("Digest ('HELLO') = %h", digest);
-
-        #100;
+        #50;
         $display("==== END OF SIMULATION ====");
         $finish;
     end
